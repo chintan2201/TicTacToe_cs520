@@ -1,0 +1,27 @@
+package ttt.model.dao;
+import java.util.Date;
+import java.util.List;
+
+import ttt.model.Game;
+import ttt.model.Player;
+
+public interface GameDao {
+	
+	List<Game> getGamesAgainstAI( Player user );
+	List<Game> getSavedGames( Player user );
+	Game SaveGame(Game game);
+	Game getGamewithstime(Player p,Date starttimeforAI);
+	/*List<Game> getUserAIWinLoss(List<Game> gam);*/
+	List<Game> getAllGames(Player p);
+	List<Game> getAllCompletedGames(Player p);
+	List<Game> get1PlayerCompletedgames(Player p);
+	List<Game> get2PlayerCompletedgames(Player p);
+	
+	Game getGameBySaveTime(Date Savetime,Player p1);
+	
+	Game getGamebyId(int id);
+	
+	Game getGamebystTimeTwoPl(Player p1,Player p2,Date starttime);
+	
+	List<Game> getalltwoplayergames(Player p);
+}

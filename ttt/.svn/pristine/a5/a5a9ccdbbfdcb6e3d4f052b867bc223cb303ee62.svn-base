@@ -1,0 +1,8 @@
+
+drop table playerplayedgames;
+drop table playersavedgames;
+drop table savedposition;
+drop table games;
+drop table players;
+
+drop sequence hibernate_sequence; 

@@ -1,0 +1,90 @@
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+     <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Game History</title>
+<style>
+table, td, th
+{
+border:1px solid #CC9900;
+}
+th
+{
+background-color:#CC9900;
+color:white;
+}
+</style>
+</head>
+<body>
+<h3><font color="#CC9900">hi... , ${uname}</font></h3>
+<a href="GameHome.html"><font color="#CC9900">Game Home</font></a> |
+<a href="Login.html?m=NewGame&type=FirstTime"><font color="#CC9900">Logout</font></a> 
+<br/>
+<h2><font color="#CC9900">Game History</font></h2>
+<ul>
+	<li>The number of games completed (i.e. excluding the saved games) : ${allcompletedgames}</li>
+	<li>The number of 1-player games completed : ${oneplayercompletedgames}</li>
+	<li>The number of 2-player games completed : ${twoplayercompletedgames}</li>
+	<li>The win rate against AI : ${rateagainst_ai} %</li>
+	<li>The win rate against human players : ${rateagainst_hu} %</li>
+	
+</ul>
+<h4><font color="#CC9900">The List of games played this month (Games list is sorted on the bases of End time of game):</font></h4>
+<table border="1">
+<tr>
+	<th>Time Interval(Start Time - End Time)</th>
+	<th>Opponent</th>
+	<th>Game length</th>
+	<th>Outcome</th>
+</tr>
+   <c:forEach items="${thismonth}" var="g">
+  	
+  			
+  		
+  		 <tr>
+  		 	<td>
+  				${g.getStarttime()} -  ${g.getEndtime()}
+  			</td>
+  			
+  		 	<c:choose>
+  		 		<c:when test="${g.player1.getUsername() eq uname}">
+					<c:choose>
+						<c:when test="${g.player2.getUsername() eq null}">
+							<td>AI</td>
+						</c:when>
+						<c:otherwise> <td>${g.player2.getUsername()}</td></c:otherwise>
+					</c:choose>
+  		 		</c:when>
+  		 		<c:when test="${g.player2.getUsername() eq uname}">
+					 <td>${g.player1.getUsername()}</td>	 		
+  		 		</c:when>
+  		 		
+  		 	</c:choose>
+  		 	<c:choose>
+  		 		<c:when test="${gamelength.containsKey(g.getGame_id())}">
+  		 			<td>${gamelength.get(g.getGame_id())}</td>
+  		 		</c:when>	
+  		 	</c:choose>
+  		 	
+  		 	<c:choose>
+  		 		<c:when test="${g.win_player.getUsername() eq uname}">
+  		 			<td>Won</td>
+  		 		</c:when>
+  		 		<c:when test="${g.loss_player.getUsername() eq uname}">
+  		 				<td>lost</td>
+  		 		</c:when>
+  		 		<c:otherwise>
+  		 			<td>Tie</td>
+  		 		</c:otherwise>
+  		 	</c:choose>
+  		 	
+  		 </tr>
+   </c:forEach>
+	
+</table>
+</body>
+</html>

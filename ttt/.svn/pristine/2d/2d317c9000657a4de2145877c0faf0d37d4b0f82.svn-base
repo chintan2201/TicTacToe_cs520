@@ -1,0 +1,40 @@
+--------SPRING SECURITY DESCRIPTION------------
+
+1) Login and Logout :
+
+	Process ::
+	
+	-I have done login and logout security by using j_spring_security_check and j_spring_security_logout.
+	-I have add <security:http> tag to give login form URL and add <security:authentication-manager> tag for database check for 
+	 username .
+	 
+2) Everyone can play a game with AI, but only authenticated users have access to functions like save/resume game, view game history, and participate in 2-player games. :
+
+	Process ::
+	
+	- I have  put this line for access all main functionality[save/resume game, view game history, and participate in 2-player games] 
+	  functionality by authenticated users
+		         <security:intercept-url pattern="/player/**" access="authenticated" />
+	  My all functionalities and their GUIs are in player folder so it can only be access by authenticated user.
+	- First put a link for play game with AI without login [In Login page]
+	- After clicking on that link it will redirect the user to play game against AI which is out of player folder so can access 
+		without authenticated.
+	- He/She can come back to main login page at any time from the game.
+	
+3)Players can only resume their own saved games. :
+
+	Process ::
+	
+	- I have used Method security to implement this requirement.
+	- I have added <security:global-method-security pre-post-annotations="enabled" /> in applicationContext.xml file.
+	- I have add @PreAuthorize("principal.username == #user.username") tag on the above of getSavedGames() method in 
+	  GameDaoImpl.java class. so it will only get the game list which are saved by that user.
+	 
+4)The user interface should hide operations from the users who do not have the privilege to perform those operations. :
+
+	process::
+	
+	- First I have added tag library <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %> in jsp pages where I want.
+	- Then I have added the authorization access to the jsp for view security 
+	    <sec:authorize access="hasRole('ROLE_USER')"></sec:authorize>
+	

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testng-results skipped="0" failed="0" total="3" passed="3">
+  <reporter-output>
+  </reporter-output>
+  <suite name="Command line suite" duration-ms="2599" started-at="2014-06-09T18:40:20Z" finished-at="2014-06-09T18:40:22Z">
+    <groups>
+      <group name="PlayerDaoTest">
+        <method signature="GameDaoTest.getUserAIWinLoss()[pri:0, instance:ttt.model.dao.GameDaoTest@4f7d0008]" name="getUserAIWinLoss" class="ttt.model.dao.GameDaoTest"/>
+        <method signature="PlayerDaoTest.getPlayer()[pri:0, instance:ttt.model.dao.PlayerDaoTest@6500df86]" name="getPlayer" class="ttt.model.dao.PlayerDaoTest"/>
+        <method signature="SavedPositionDaoTest.getUserAIWinLoss()[pri:0, instance:ttt.model.dao.SavedPositionDaoTest@204f30ec]" name="getUserAIWinLoss" class="ttt.model.dao.SavedPositionDaoTest"/>
+      </group> <!-- PlayerDaoTest -->
+    </groups>
+    <test name="Command line test" duration-ms="2599" started-at="2014-06-09T18:40:20Z" finished-at="2014-06-09T18:40:22Z">
+      <class name="ttt.model.dao.SavedPositionDaoTest">
+        <test-method status="PASS" signature="springTestContextPrepareTestInstance()[pri:0, instance:ttt.model.dao.SavedPositionDaoTest@204f30ec]" name="springTestContextPrepareTestInstance" is-config="true" duration-ms="15" started-at="2014-06-09T11:40:22Z" finished-at="2014-06-09T11:40:22Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextPrepareTestInstance -->
+        <test-method status="PASS" signature="springTestContextBeforeTestMethod(java.lang.reflect.Method)[pri:0, instance:ttt.model.dao.SavedPositionDaoTest@204f30ec]" name="springTestContextBeforeTestMethod" is-config="true" duration-ms="0" started-at="2014-06-09T11:40:22Z" finished-at="2014-06-09T11:40:22Z">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[public void ttt.model.dao.SavedPositionDaoTest.getUserAIWinLoss()]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextBeforeTestMethod -->
+        <test-method status="PASS" signature="getUserAIWinLoss()[pri:0, instance:ttt.model.dao.SavedPositionDaoTest@204f30ec]" name="getUserAIWinLoss" duration-ms="32" started-at="2014-06-09T11:40:22Z" finished-at="2014-06-09T11:40:22Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- getUserAIWinLoss -->
+        <test-method status="PASS" signature="springTestContextAfterTestMethod(java.lang.reflect.Method)[pri:0, instance:ttt.model.dao.SavedPositionDaoTest@204f30ec]" name="springTestContextAfterTestMethod" is-config="true" duration-ms="0" started-at="2014-06-09T11:40:22Z" finished-at="2014-06-09T11:40:22Z">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[public void ttt.model.dao.SavedPositionDaoTest.getUserAIWinLoss()]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextAfterTestMethod -->
+      </class> <!-- ttt.model.dao.SavedPositionDaoTest -->
+      <class name="ttt.model.dao.PlayerDaoTest">
+        <test-method status="PASS" signature="springTestContextPrepareTestInstance()[pri:0, instance:ttt.model.dao.PlayerDaoTest@6500df86]" name="springTestContextPrepareTestInstance" is-config="true" duration-ms="16" started-at="2014-06-09T11:40:22Z" finished-at="2014-06-09T11:40:22Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextPrepareTestInstance -->
+        <test-method status="PASS" signature="getPlayer()[pri:0, instance:ttt.model.dao.PlayerDaoTest@6500df86]" name="getPlayer" duration-ms="0" started-at="2014-06-09T11:40:22Z" finished-at="2014-06-09T11:40:22Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- getPlayer -->
+        <test-method status="PASS" signature="springTestContextAfterTestMethod(java.lang.reflect.Method)[pri:0, instance:ttt.model.dao.PlayerDaoTest@6500df86]" name="springTestContextAfterTestMethod" is-config="true" duration-ms="0" started-at="2014-06-09T11:40:22Z" finished-at="2014-06-09T11:40:22Z">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[public void ttt.model.dao.PlayerDaoTest.getPlayer()]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextAfterTestMethod -->
+        <test-method status="PASS" signature="springTestContextBeforeTestMethod(java.lang.reflect.Method)[pri:0, instance:ttt.model.dao.PlayerDaoTest@6500df86]" name="springTestContextBeforeTestMethod" is-config="true" duration-ms="0" started-at="2014-06-09T11:40:22Z" finished-at="2014-06-09T11:40:22Z">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[public void ttt.model.dao.PlayerDaoTest.getPlayer()]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextBeforeTestMethod -->
+      </class> <!-- ttt.model.dao.PlayerDaoTest -->
+      <class name="ttt.model.dao.GameDaoTest">
+        <test-method status="PASS" signature="springTestContextPrepareTestInstance()[pri:0, instance:ttt.model.dao.GameDaoTest@4f7d0008]" name="springTestContextPrepareTestInstance" is-config="true" duration-ms="2177" started-at="2014-06-09T11:40:20Z" finished-at="2014-06-09T11:40:22Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextPrepareTestInstance -->
+        <test-method status="PASS" signature="springTestContextBeforeTestMethod(java.lang.reflect.Method)[pri:0, instance:ttt.model.dao.GameDaoTest@4f7d0008]" name="springTestContextBeforeTestMethod" is-config="true" duration-ms="94" started-at="2014-06-09T11:40:22Z" finished-at="2014-06-09T11:40:22Z">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[public void ttt.model.dao.GameDaoTest.getUserAIWinLoss()]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextBeforeTestMethod -->
+        <test-method status="PASS" signature="getUserAIWinLoss()[pri:0, instance:ttt.model.dao.GameDaoTest@4f7d0008]" name="getUserAIWinLoss" duration-ms="234" started-at="2014-06-09T11:40:22Z" finished-at="2014-06-09T11:40:22Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- getUserAIWinLoss -->
+        <test-method status="PASS" signature="springTestContextAfterTestMethod(java.lang.reflect.Method)[pri:0, instance:ttt.model.dao.GameDaoTest@4f7d0008]" name="springTestContextAfterTestMethod" is-config="true" duration-ms="16" started-at="2014-06-09T11:40:22Z" finished-at="2014-06-09T11:40:22Z">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[public void ttt.model.dao.GameDaoTest.getUserAIWinLoss()]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextAfterTestMethod -->
+      </class> <!-- ttt.model.dao.GameDaoTest -->
+    </test> <!-- Command line test -->
+  </suite> <!-- Command line suite -->
+</testng-results>

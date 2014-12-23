@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+	pageEncoding="ISO-8859-1"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
+<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<title>Two Player Game Board</title>
+<style>
+table,td,th {
+	border: 1px solid #CC9900;
+}
+
+th {
+	background-color: #CC9900;
+	color: white;
+}
+</style>
+<script type="text/javascript" src="../js/jquery-2.1.1.min.js"></script>
+<script type="text/javascript">
+	var check = null;
+	//this jquery is for joinlist maintainance
+/* 	$(function() {
+		$
+				.ajax({
+					url : "joinlist.json",
+					cache : false,
+					success : function(data) {
+						$("#join").empty();
+						for (var i = 0; i < data.usernamesjoin.length; ++i)
+							$("#join").append(
+									"<li>" + data.usernamesjoin[i] + "</li>");
+
+					}
+				});
+		update();
+	});
+
+	function update() {
+		$.ajax({
+			url : "joinlist.deferred.json",
+			cache : false,
+			success : function(data) {
+				$("#join").empty();
+				for (var i = 0; i < data.length; ++i)
+					$("#join").append("<li>" + data[i] + "</li>");
+				update();
+			}
+		});
+	}
+	//this jquery is for hostlist maintainance
+	$(function() {
+		$
+				.ajax({
+					url : "hostlist.json",
+					cache : false,
+					success : function(data) {
+						$("#host").empty();
+						for (var i = 0; i < data.usernameshost.length; ++i)
+							$("#host").append(
+									"<li>" + data.usernameshost[i] + "</li>");
+
+					}
+				});
+		updatehost();
+	});
+
+	function updatehost() {
+		$.ajax({
+			url : "hostlist.deferred.json",
+			cache : false,
+			success : function(data) {
+				$("#host").empty();
+				for (var i = 0; i < data.length; ++i)
+					$("#host").append("<li>" + data[i] + "</li>");
+				updatehost();
+			}
+		});
+	} */
+	//this jquery is for Gamelist maintainance
+	$(function() {
+		$
+				.ajax({
+					url : "gamelist.json",
+					cache : false,
+					success : function(data) {
+						if (check != true) {
+							for (var i = 0; i < data.games.length; ++i) {
+
+								var stringgame = data.games[i];
+								var players = stringgame.split('-');
+								var user = "${un}";
+								var p1 = players[0];
+								var p2 = players[1];
+
+								if (players[0] === user) {
+									//	document.write(player[1]+"has joined the game. Please make your move.");
+									$('#Messages')
+											.append(
+													"<h3><font color='#CC9900'>"
+															+ p2
+															+ " has joined the game. Please make your move.</font></h3>");
+									$('#info #font').empty();
+									$('#heading').append("<h3><font color='#CC9900'>"+p1+" -vs- "+p2+"</font></h3>");
+									for (var i = 1; i <= 3; i++) {
+										$('#gboard')
+												.append("<tr id=" + i + ">");
+										for (var j = 1; j <= 3; j++) {
+											$("#" + i)
+													.append(
+															'<td><a href="#"><font color="#CC9900" size="20">__</font></a></td> ');
+										}
+
+									}
+
+									check = true;
+									break;
+
+								} else if (players[1] === user) {
+									//document.write("Waiting for (Player A)"+p1+"'s move"); 
+									$('#Messages').append(
+											"<h3><font color='#CC9900'> Waiting for (Player A) "
+													+ p1
+													+ "'s move</font></h3>");
+									$('#info #font').empty();
+									$('#heading').append("<h3><font color='#CC9900'>"+p1+" -vs- "+p2+"</font></h3>");
+									for (var i = 1; i <= 3; i++) {
+										$('#gboard')
+												.append("<tr id=" + i + ">");
+										for (var j = 1; j <= 3; j++) {
+											$("#" + i)
+													.append(
+															'<td><font color="#CC9900" size="20">__</font></td> ');
+										}
+
+									}
+									check = true;
+									break;
+
+								}
+							}
+
+						}
+
+					}
+				});
+		updateGame();
+	});
+
+	function updateGame() {
+		$
+				.ajax({
+					url : "gamelist.deferred.json",
+					cache : false,
+					success : function(data) {
+						
+						if (check != true) {
+							for (var i = 0; i < data.length; ++i) {
+
+								var stringgame = data[i];
+								var players = stringgame.split('-');
+								var user = "${un}";
+								var p1 = players[0];
+								var p2 = players[1];
+
+								if (players[0] === user) {
+
+									$('#Messages')
+											.append(
+													"<h3><font color='#CC9900'>"
+															+ p2
+															+ " has joined the game. Please make your move.</font></h3>");
+									$('#info #font').empty();
+									$('#heading').append("<h3><font color='#CC9900'>"+p1+" -vs- "+p2+"</font></h3>");
+									for (var i = 1; i <= 3; i++) {
+										$('#gboard')
+												.append("<tr id=" + i + ">");
+										for (var j = 1; j <= 3; j++) {
+											$("#" + i)
+													.append(
+															'<td><a href="#"><font color="#CC9900" size="20">__</font></a></td> ');
+										}
+
+									}
+									check = true;
+									break;
+								} else if (players[1] === user) {
+
+									$('#Messages').append(
+											"<h3><font color='#CC9900'> Waiting for (Player A) "
+													+ p1
+													+ "'s move</font></h3>");
+									$('#info #font').empty();
+									$('#heading').append("<h3><font color='#CC9900'>"+p1+" -vs- "+p2+"</font></h3>");
+									for (var i = 1; i <= 3; i++) {
+										$('#gboard')
+												.append("<tr id=" + i + ">");
+										for (var j = 1; j <= 3; j++) {
+											$("#" + i)
+													.append(
+															'<td><font color="#CC9900" size="20">__</font></td> ');
+										}
+
+									}
+									check = true;
+									break;
+								}
+
+							}
+
+							updateGame();
+						}
+
+					}
+				
+				});
+		
+	}
+	
+	
+</script>
+</head>
+<body>
+	<h3 id="uname">
+		<font color="#CC9900">Hello , ${un}</font>
+	</h3>
+	<sec:authorize access="hasRole('ROLE_USER')">
+	<a id="ghome" href="ExitGame.html?c=gh"><font color="#CC9900" >Game Home</font></a>
+	|
+	<a  href="ExitGame.html?c=th"><font color="#CC9900">New Two Player Game</font></a> |
+	<a  href="ExitGame.html?c=lo"><font color="#CC9900">Logout</font></a>
+
+	<div id="Messages">
+		<h1>
+			<font color="#CC9900">Tic Tac Toe</font>
+		</h1>
+		<c:choose>
+			<c:when test="${infomsg ne null}">
+				<h3 id="info">
+					<font color="#CC9900" id="font">${infomsg}</font>
+				</h3>
+			</c:when>
+		</c:choose>
+	</div>
+	<div>
+		<p id="heading"></p>
+		<table id="gboard" border="1">
+
+		</table>
+	</div>
+	<!-- <div style="border: solid #CC9900; width: 50%;">
+		<h2>Joining Player List</h2>
+		<ul id="join">
+		</ul>
+		<p>-----------------------------------------------</p>
+		<h2>Host Player List</h2>
+		<ul id="host">
+		</ul>
+
+	</div> -->
+	</sec:authorize>
+</body>
+</html>

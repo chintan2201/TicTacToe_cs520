@@ -1,0 +1,9 @@
+<html>
+<body>
+<h2>WelCome to the world Of Tic Tac Toe...!</h2>
+
+<ul>
+	<li><a href="player/Login.html?m=NewGame&type=FirstTime">Tic Tac Toe</a></li>
+</ul>
+</body>
+</html>

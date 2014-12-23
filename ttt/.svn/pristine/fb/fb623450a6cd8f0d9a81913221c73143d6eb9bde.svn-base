@@ -1,0 +1,1082 @@
+package ttt.web.controller;
+
+import java.text.DateFormat;
+import java.text.DecimalFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Random;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import ttt.model.Game;
+import ttt.model.Player;
+import ttt.model.SavedPosition;
+import ttt.model.dao.GameDao;
+import ttt.model.dao.PlayerDao;
+import ttt.model.dao.SavedPositionDao;
+
+@Controller
+public class PlayerController {
+
+	    boolean checkentryAI  = false;
+	    List<String> lp1 = null;
+		List<String> lp2 = null;
+		Date starttimeforAI = null;
+		Date savetimefroAI = null;
+	    
+	    @Autowired
+	    PlayerDao playerDao;
+	    
+	    @Autowired
+	    GameDao gameDao;
+	    
+	    @Autowired
+	    SavedPositionDao savedpositionDao;
+	
+	    @RequestMapping(value= "/player/Login.html", method = RequestMethod.GET)
+	    public String LoginDisplay(ModelMap models,HttpSession session,@RequestParam String m,@RequestParam String type)
+	    {
+	    	if(m.equals("intt") && type.equals("ap"))
+    		{
+	    		if(session.getAttribute("savetime") == null)
+	    		{
+	    			Game ga = new Game();
+	    			Player p = playerDao.getPlayer(session.getAttribute("username").toString());
+	    			ga = gameDao.getGamewithstime(p,starttimeforAI);
+	    			
+	    			 DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+		    		   //get current date time with Date()
+		    		   Date sdate = new Date();
+			    		try {
+							ga.setEndtime(dateFormat.parse(dateFormat.format(sdate)));
+						} catch (ParseException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+		    		ga.setLoss_player(p);
+		    		ga.setTie(false);
+		    		ga.setSave(false);
+		    		gameDao.SaveGame(ga);
+	    		}
+	    		else
+	    		{
+	    			Game g = new Game();
+	    			Player p = playerDao.getPlayer(session.getAttribute("username").toString());
+	    				//g = gameDao.getGameBySaveTime((Date)(session.getAttribute("savetime")), p);
+	    			g = gameDao.getGamebyId((Integer)session.getAttribute("savetime"));
+	    				g.setSavetime(null);
+	    			 DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+		    		   //get current date time with Date()
+		    		   Date sdate = new Date();
+			    		try {
+							g.setEndtime(dateFormat.parse(dateFormat.format(sdate)));
+						} catch (ParseException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+		    		
+			    		    g.setLoss_player(p);
+				    		g.setTie(false);
+				    		g.setSave(false);
+			    		
+		    		gameDao.SaveGame(g);
+    				
+    				//2. playersavedgames table update
+		    		List<Game> gsavelist = new ArrayList<Game>();
+	    			gsavelist = gameDao.getSavedGames(p);
+	    			playerDao.addplayersavedgame(gsavelist,p.getPlayer_id());
+	    			//3
+	    			List<SavedPosition> positions = savedpositionDao.getPosition(g.getGame_id());
+	    			for(int i=0;i< positions.size();i++)
+	    			{
+	    				savedpositionDao.deleteRecord(positions.get(i).getSavedgameposition_id());
+	    			}
+	    		}
+	    	}
+	    	session.invalidate();
+		    models.put( "player", new Player() );
+	        return "player/Login";
+	    }
+	    
+	    @RequestMapping(value = "/player/Login.html", method = RequestMethod.POST)
+	    public String LoginCheck( @ModelAttribute("player") Player player,HttpSession session ,ModelMap models)
+	    {
+	        boolean test = playerDao.credentialcheck(player.getUsername(), player.getPassword());
+	        if(test == true)
+	        {
+	        	session.setAttribute("username", player.getUsername());
+	        	models.put("player", player.getUsername());
+	        	return "redirect:GameHome.html";
+	        }
+	        else
+	        {
+	        	 return "player/Login";
+	        }
+	    }
+	    
+	    @RequestMapping("/player/GameHome.html")
+	    public String GameHome(ModelMap models,HttpSession session)
+	    {
+	    	if(session.getAttribute("username")==null)
+	    	{
+	    		return "redirect:Login.html?m=NewGame&type=FirstTime";
+	    	}
+	    	else
+	    	{
+	    		models.put( "player", session.getAttribute("username"));
+	       		return "player/GameHome";
+	    	}
+	    }
+	    
+	    @RequestMapping(value= "/player/Registration.html", method = RequestMethod.GET)
+	    public String RegistrationDisplay(ModelMap models)
+	    {
+		    models.put( "Play", new Player() );
+	        return "player/Registration";
+	    }
+	    
+	    @RequestMapping(value="/player/Registration.html", method = RequestMethod.POST)
+	    public String RegistrationProcess(@ModelAttribute("Play") Player player)
+	    {
+	    	if(player.getUsername()!= "" && player.getPassword()!= "" && player.getEmail()!= "")
+	    	{
+	    		playerDao.SavePlayer(player);
+	    		return "redirect:Login.html?m=NewGame&type=FirstTime";
+	    	}
+	    	else
+	    	{
+	    		return "player/Registration";
+	    	}
+	    	
+	    }
+	    
+	    @SuppressWarnings("unchecked")
+		@RequestMapping(value= "/player/GameWithAI.html", method = RequestMethod.GET)
+	    public String GameWithAIDisplay(ModelMap models,HttpSession session,ModelMap model,@RequestParam String m)
+	    {
+	    	if(session.getAttribute("username")==null)
+	    	{
+	    		return "redirect:Login.html?m=NewGame&type=FirstTime";
+	    	}
+	    	else
+	    	{
+	    		if(m.equals("intt"))
+	    		{
+	    			if(session.getAttribute("savetime") == null)
+	    			{
+		    			Game ga = new Game();
+		    			Player p = playerDao.getPlayer(session.getAttribute("username").toString());
+		    			ga = gameDao.getGamewithstime(p,starttimeforAI);
+		    			
+		    			 DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+			    		   //get current date time with Date()
+			    		   Date sdate = new Date();
+				    		try {
+								ga.setEndtime(dateFormat.parse(dateFormat.format(sdate)));
+							} catch (ParseException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+			    		ga.setLoss_player(p);
+			    		ga.setTie(false);
+			    		ga.setSave(false);
+			    		gameDao.SaveGame(ga);			    		
+	    			}
+	    			else
+	    			{
+	    				Game g = new Game();
+		    			Player p = playerDao.getPlayer(session.getAttribute("username").toString());
+		    				//g = gameDao.getGameBySaveTime((Date)(session.getAttribute("savetime")), p);
+		    			g = gameDao.getGamebyId((Integer)session.getAttribute("savetime"));
+		    				g.setSavetime(null);
+		    			 DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+			    		   //get current date time with Date()
+			    		   Date sdate = new Date();
+				    		try {
+								g.setEndtime(dateFormat.parse(dateFormat.format(sdate)));
+							} catch (ParseException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+			    		
+				    		    g.setLoss_player(p);
+					    		g.setTie(false);
+					    		g.setSave(false);
+				    		
+			    		gameDao.SaveGame(g);
+	    				
+	    				//2. playersavedgames table update
+			    		List<Game> gsavelist = new ArrayList<Game>();
+		    			gsavelist = gameDao.getSavedGames(p);
+		    			playerDao.addplayersavedgame(gsavelist,p.getPlayer_id());
+		    			//3
+		    			List<SavedPosition> positions = savedpositionDao.getPosition(g.getGame_id());
+		    			for(int i=0;i< positions.size();i++)
+		    			{
+		    				savedpositionDao.deleteRecord(positions.get(i).getSavedgameposition_id());
+		    			}
+						
+	    		}
+	    	}
+	   	
+	    		//////
+	    		if(m.equals("savegame"))
+	    		{
+	    			//1. game table update
+	    			Game g = new Game();
+	    			Player p = playerDao.getPlayer(session.getAttribute("username").toString());
+	    			
+	    			if(session.getAttribute("savetime") == null)
+	    			{
+	    				g = gameDao.getGamewithstime(p,starttimeforAI);
+	    		
+	    			//	g= gameDao.getGameBySaveTime((Date)session.getAttribute("savetime"), p);
+	    			
+	    			 DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+		    		   //get current date time with Date()
+		    		   Date sdate = new Date();
+			    		try {
+							g.setSavetime(dateFormat.parse(dateFormat.format(sdate)));
+						} catch (ParseException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+		    		
+			    		
+				    		g.setTie(false);
+				    		g.setSave(true);
+			    		
+		    		gameDao.SaveGame(g);
+		    		session.removeAttribute("savetime");
+	    			}
+	    			else
+	    			{
+	    				//g= gameDao.getGameBySaveTime((Date)session.getAttribute("savetime"), p);
+	    				g = gameDao.getGamebyId((Integer)session.getAttribute("savetime"));
+		    			 DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+			    		   //get current date time with Date()
+		    			 System.out.print(g.getGame_id());
+			    		   Date sdate = new Date();
+				    		try {
+								g.setSavetime(dateFormat.parse(dateFormat.format(sdate)));
+							} catch (ParseException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+				    		
+			    		gameDao.SaveGame(g);
+	    			}
+		    		//2. playersavedgames table update
+		    		List<Game> gsavelist = new ArrayList<Game>();
+	    			gsavelist = gameDao.getSavedGames(p);
+	    			playerDao.addplayersavedgame(gsavelist,p.getPlayer_id());
+	    			//3
+	    			
+					List<String> p1 = (List<String>)session.getAttribute("list1");
+	    			List<String> ai = (List<String>)session.getAttribute("list2");
+	    			List<SavedPosition> positions = savedpositionDao.getPosition(g.getGame_id());
+	    			for(int i=0;i< positions.size();i++)
+	    			{
+	    				savedpositionDao.deleteRecord(positions.get(i).getSavedgameposition_id());
+	    			}
+	    			/*List<SavedPosition> s1 = savedpositionDao.getPosition(g.getGame_id());
+	    			if(s1.size() != 0)
+	    			{
+		    			for(int a=0;a<s1.size();a++)
+	    				{
+		    				for(int i=0 ; i< p1.size() ; i++)
+		    				{
+		    					if(!s1.get(a).getPosition().equals(p1.get(i)) && s1.get(a).isIsAiPlayerPosition() == false)
+		    					{
+				    				SavedPosition s1p = new SavedPosition();
+				    				s1p.setGame_id(g);
+				    				s1p.setIsAiPlayerPosition(false);
+				    				s1p.setPosition(p1.get(i));
+				    				savedpositionDao.SavePositions(s1p);
+		    					}
+		    				}
+		    			}
+		    			for(int a=0;a<s1.size();a++)
+	    				{
+			    			for(int j=0 ; j< ai.size() ; j++)
+			    			{
+			    				if(!s1.get(a).getPosition().equals(ai.get(j)) && s1.get(a).isIsAiPlayerPosition() == true)
+			    				{
+			    					SavedPosition s2p = new SavedPosition();
+			    					s2p.setGame_id(g);
+			    					s2p.setIsAiPlayerPosition(true);
+			    					s2p.setPosition(ai.get(j));
+			    					savedpositionDao.SavePositions(s2p);
+			    				}
+			    			}
+	    				}
+	    			}
+	    			else
+	    			{*/
+	    				for(int i=0 ; i< p1.size() ; i++)
+		    			{
+		    				SavedPosition s3 = new SavedPosition();
+		    				s3.setGame_id(g);
+		    				s3.setIsAiPlayerPosition(false);
+		    				s3.setPosition(p1.get(i));
+		    				savedpositionDao.SavePositions(s3);
+		    			}
+		    			for(int j=0 ; j< ai.size() ; j++)
+		    			{
+		    				SavedPosition s2 = new SavedPosition();
+		    				s2.setGame_id(g);
+		    				s2.setIsAiPlayerPosition(true);
+		    				s2.setPosition(ai.get(j));
+		    				savedpositionDao.SavePositions(s2);
+		    			}
+	    			//}
+	    			
+	    			
+	    		}
+	    		///////
+	    		session.removeAttribute("savetime");
+	    		session.removeAttribute("list1");
+	    		session.removeAttribute("list2");
+	    		checkentryAI = false;
+	    		model.put("player", session.getAttribute("username"));
+	    		return "player/GameWithAI";
+	    	}
+	    }
+	    
+	    @SuppressWarnings("unchecked")
+		@RequestMapping(value= "/player/PlayWithAI.html", method = RequestMethod.GET)
+	    public String GameWithAIDisplay(@RequestParam Integer r,@RequestParam Integer c,ModelMap models,HttpSession session)
+	    {
+	    	if(session.getAttribute("username")==null)
+	    	{
+	    		return "redirect:Login.html?m=NewGame&type=FirstTime";
+	    	}
+	    	else
+	    	{
+	    		String msg = null;
+	    		if(r!=0 && c!=0)
+	    		{
+	    		String uname = (String)session.getAttribute("username");
+	    		models.put("player", uname);
+	    		
+	    		//set game parameters for staring entry in Game model
+	    		if(checkentryAI == false)
+	    		{
+		    		Game g = new Game();
+		    		List<Player> p = playerDao.getPlayers(uname);
+		    		if (p.size() == 1)
+		    		{ for(Player pl1 : p ) {g.setPlayer1(pl1);}}
+		    		//g.setPlayer2(null);
+		    		   DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+		    		   //get current date time with Date()
+		    		   Date sdate = new Date();
+				    		try {
+				    			starttimeforAI = dateFormat.parse(dateFormat.format(sdate));
+								g.setStarttime(starttimeforAI);
+								
+							} catch (ParseException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+				    //g.setEndtime(null);
+				    gameDao.SaveGame(g);		
+				    checkentryAI = true;
+				   Player player = playerDao.getPlayer(uname);
+	    			//g = gameDao.getGamewithstime(player,starttimeforAI);
+				   
+	    			List<Game> glist = new ArrayList<Game>();
+	    			glist = gameDao.getAllGames(player);
+	    			playerDao.addplayergame(glist,player.getPlayer_id());
+	    		}
+			    //
+	    		int row1 = r;
+	    		int col1 = c;
+	    		
+	    		// Player 1 -> X
+	    		lp1 = (List<String>)session.getAttribute("list1");
+	    		if (lp1 == null) {
+	    			lp1 = new ArrayList<String>();
+	    		}
+	    		String p1 = row1 + "-" + col1;
+	    		lp1.add(p1);
+
+	    		// Player 2 - O
+	    		lp2 = (List<String>) session.getAttribute("list2");
+	    		if (lp2 == null) {
+	    			lp2 = new ArrayList<String>();
+	    		}
+	    		String p2 = null;
+	    		if (lp2.size() != 0) {
+	    			if (lp2.size() != 1) {
+
+	    				for (int i = 1; i <= 3; i++) {
+	    					if (p2 == null) {
+	    						if (lp2.contains(i + "-1") && lp2.contains(i + "-2")
+	    								&& !lp1.contains(i + "-3")) {
+	    							p2 = i + "-3";
+	    						} else if (lp2.contains(i + "-2")
+	    								&& lp2.contains(i + "-3")
+	    								&& !lp1.contains(i + "-1")) {
+	    							p2 = i + "-1";
+	    						} else if (lp2.contains(i + "-1")
+	    								&& lp2.contains(i + "-3")
+	    								&& !lp1.contains(i + "-2")) {
+	    							p2 = i + "-2";
+	    						}
+	    					}
+	    				}
+	    				// ----------
+	    				if (p2 == null) {
+	    					for (int i = 1; i <= 3; i++) {
+	    						if (p2 == null) {
+	    							if (lp2.contains("1-" + i)
+	    									&& lp2.contains("2-" + i)
+	    									&& !lp1.contains("3-" + i)) {
+	    								p2 = "3-" + i;
+	    							} else if (lp2.contains("2-" + i)
+	    									&& lp2.contains("3-" + i)
+	    									&& !lp1.contains("1-" + i)) {
+	    								p2 = "1-" + i;
+	    							} else if (lp2.contains("1-" + i)
+	    									&& lp2.contains("3-" + i)
+	    									&& !lp1.contains("2-" + i)) {
+	    								p2 = "2-" + i;
+	    							}
+	    						}
+	    					}
+	    				}
+	    				// -----------------
+	    				if (p2 == null) {
+	    					if (lp2.contains("1-1") && lp2.contains("2-2")
+	    							&& !lp1.contains("3-3")) {
+	    						p2 = "3-3";
+	    					} else if (lp2.contains("2-2") && lp2.contains("3-3")
+	    							&& !lp1.contains("1-1")) {
+	    						p2 = "1-1";
+	    					} else if (lp2.contains("1-1") && lp2.contains("3-3")
+	    							&& !lp1.contains("2-2")) {
+	    						p2 = "2-2";
+	    					}
+	    					// --------------------
+	    					else if (lp2.contains("1-3") && lp2.contains("2-2")
+	    							&& !lp1.contains("3-1")) {
+	    						p2 = "3-1";
+	    					} else if (lp2.contains("2-2") && lp2.contains("3-1")
+	    							&& !lp1.contains("1-3")) {
+	    						p2 = "1-3";
+	    					} else if (lp2.contains("1-3") && lp2.contains("3-1")
+	    							&& !lp1.contains("2-2")) {
+	    						p2 = "2-2";
+	    					}
+	    				}
+	    				if (p2 == null) {
+	    					for (int i = 1; i <= 3; i++) {
+	    						if (p2 == null) {
+	    							if (lp1.contains(i + "-1")
+	    									&& lp1.contains(i + "-2")
+	    									&& !lp2.contains(i + "-3")) {
+	    								p2 = i + "-3";
+	    							} else if (lp1.contains(i + "-2")
+	    									&& lp1.contains(i + "-3")
+	    									&& !lp2.contains(i + "-1")) {
+	    								p2 = i + "-1";
+	    							} else if (lp1.contains(i + "-1")
+	    									&& lp1.contains(i + "-3")
+	    									&& !lp2.contains(i + "-2")) {
+	    								p2 = i + "-2";
+	    							}
+	    						}
+	    					}
+	    					// ----------
+	    					if (p2 == null) {
+	    						for (int i = 1; i <= 3; i++) {
+	    							if (p2 == null) {
+	    								if (lp1.contains("1-" + i)
+	    										&& lp1.contains("2-" + i)
+	    										&& !lp2.contains("3-" + i)) {
+	    									p2 = "3-" + i;
+	    								} else if (lp1.contains("2-" + i)
+	    										&& lp1.contains("3-" + i)
+	    										&& !lp2.contains("1-" + i)) {
+	    									p2 = "1-" + i;
+	    								} else if (lp1.contains("1-" + i)
+	    										&& lp1.contains("3-" + i)
+	    										&& !lp2.contains("2-" + i)) {
+	    									p2 = "2-" + i;
+	    								}
+	    							}
+	    						}
+	    					}
+	    					// -----------------
+	    					if (p2 == null) {
+	    						if (lp1.contains("1-1") && lp1.contains("2-2")
+	    								&& !lp2.contains("3-3")) {
+	    							p2 = "3-3";
+	    						} else if (lp1.contains("2-2") && lp1.contains("3-3")
+	    								&& !lp2.contains("1-1")) {
+	    							p2 = "1-1";
+	    						} else if (lp1.contains("1-1") && lp1.contains("3-3")
+	    								&& !lp2.contains("2-2")) {
+	    							p2 = "2-2";
+	    						}
+	    						// --------------------
+	    						else if (lp1.contains("1-3") && lp1.contains("2-2")
+	    								&& !lp2.contains("3-1")) {
+	    							p2 = "3-1";
+	    						} else if (lp1.contains("2-2") && lp1.contains("3-1")
+	    								&& !lp2.contains("1-3")) {
+	    							p2 = "1-3";
+	    						} else if (lp1.contains("1-3") && lp1.contains("3-1")
+	    								&& !lp2.contains("2-2")) {
+	    							p2 = "2-2";
+	    						}
+	    					}
+	    				}
+	    				if (p2 == null) {
+	    					List<String> lptemp2 = new ArrayList<String>();
+	    					for (int i = 1; i <= 3; i++) {
+	    						for (int j = 1; j <= 3; j++) {
+	    							String x = i + "-" + j;
+	    							if (!lp1.contains(x) && !lp2.contains(x)) {
+	    								lptemp2.add(x);
+	    							}
+	    						}
+	    					}
+	    					Random ran = new Random();
+	    					if (lptemp2.size() != 0) {
+	    						int index = ran.nextInt(lptemp2.size() - 1);
+	    						p2 = lptemp2.get(index);
+	    					}
+	    				}
+	    			} else {
+	    				for (int i = 1; i <= 3; i++) {
+	    					if (p2 == null) {
+	    						if (lp1.contains(i + "-1") && lp1.contains(i + "-2")
+	    								&& !lp2.contains(i + "-3")) {
+	    							p2 = i + "-3";
+	    						} else if (lp1.contains(i + "-2")
+	    								&& lp1.contains(i + "-3")
+	    								&& !lp2.contains(i + "-1")) {
+	    							p2 = i + "-1";
+	    						} else if (lp1.contains(i + "-1")
+	    								&& lp1.contains(i + "-3")
+	    								&& !lp2.contains(i + "-2")) {
+	    							p2 = i + "-2";
+	    						}
+	    					}
+	    				}
+	    				// ----------
+	    				if (p2 == null) {
+	    					for (int i = 1; i <= 3; i++) {
+	    						if (p2 == null) {
+	    							if (lp1.contains("1-" + i)
+	    									&& lp1.contains("2-" + i)
+	    									&& !lp2.contains("3-" + i)) {
+	    								p2 = "3-" + i;
+	    							} else if (lp1.contains("2-" + i)
+	    									&& lp1.contains("3-" + i)
+	    									&& !lp2.contains("1-" + i)) {
+	    								p2 = "1-" + i;
+	    							} else if (lp1.contains("1-" + i)
+	    									&& lp1.contains("3-" + i)
+	    									&& !lp2.contains("2-" + i)) {
+	    								p2 = "2-" + i;
+	    							}
+	    						}
+	    					}
+	    				}
+	    				// -----------------
+	    				if (p2 == null) {
+	    					if (lp1.contains("1-1") && lp1.contains("2-2")
+	    							&& !lp2.contains("3-3")) {
+	    						p2 = "3-3";
+	    					} else if (lp1.contains("2-2") && lp1.contains("3-3")
+	    							&& !lp2.contains("1-1")) {
+	    						p2 = "1-1";
+	    					} else if (lp1.contains("1-1") && lp1.contains("3-3")
+	    							&& !lp2.contains("2-2")) {
+	    						p2 = "2-2";
+	    					}
+	    					// --------------------
+	    					else if (lp1.contains("1-3") && lp1.contains("2-2")
+	    							&& !lp2.contains("3-1")) {
+	    						p2 = "3-1";
+	    					} else if (lp1.contains("2-2") && lp1.contains("3-1")
+	    							&& !lp2.contains("1-3")) {
+	    						p2 = "1-3";
+	    					} else if (lp1.contains("1-3") && lp1.contains("3-1")
+	    							&& !lp2.contains("2-2")) {
+	    						p2 = "2-2";
+	    					}
+	    				}
+	    				// ---------
+	    				if (p2 == null) {
+	    					List<String> lptemp1 = new ArrayList<String>();
+	    					for (int i = 1; i <= 3; i++) {
+	    						for (int j = 1; j <= 3; j++) {
+	    							String x = i + "-" + j;
+	    							if (!lp1.contains(x) && !lp2.contains(x)) {
+	    								lptemp1.add(x);
+	    							}
+	    						}
+	    					}
+	    					Random ran = new Random();
+	    					if (lptemp1.size() != 0) {
+	    						int index = ran.nextInt(lptemp1.size() - 1);
+	    						p2 = lptemp1.get(index);
+	    					}
+	    				}
+	    			}
+	    		} else {
+	    			List<String> lptemp = new ArrayList<String>();
+	    			for (int i = 1; i <= 3; i++) {
+	    				for (int j = 1; j <= 3; j++) {
+	    					String x = i + "-" + j;
+	    					if (!lp1.contains(x)) {
+	    						lptemp.add(x);
+	    					}
+	    				}
+	    			}
+	    			Random ran = new Random();
+	    			if (lptemp.size() != 0) {
+	    				int index = ran.nextInt(lptemp.size() - 1);
+	    				p2 = lptemp.get(index);
+	    			}
+	    		}
+	    		lp2.add(p2);
+	    		// ----------------
+	    		for (int i = 1; i <= 3; i++) {
+	    			if (msg == null) {
+	    				if (lp1.contains(i + "-1") && lp1.contains(i + "-2")
+	    						&& lp1.contains(i + "-3")) {
+	    					msg = "You Won..!!";
+	    				}
+	    				if (lp1.contains("1-"+i) && lp1.contains("2-"+i)
+	    						&& lp1.contains("3-"+i)) {
+	    					msg = "You Won..!!";
+	    				}
+	    			}
+	    		}
+	    		if (msg == null) {
+	    			if (lp1.contains("1-1") && lp1.contains("2-2")
+	    					&& lp1.contains("3-3")) {
+	    				msg = "You Won..!!";
+	    			}
+	    			if (lp1.contains("1-3") && lp1.contains("2-2")
+	    					&& lp1.contains("3-1")) {
+	    				msg = "You Won..!!";
+	    			}
+	    		}
+	    		// ----------
+	    		if (msg == null) {
+	    			for (int i = 1; i <= 3; i++) {
+	    				if (msg == null) {
+	    					if (lp2.contains(i + "-1") && lp2.contains(i + "-2")
+	    							&& lp2.contains(i + "-3")) {
+	    						msg = "I Won..!!";
+	    					}
+	    					if (lp2.contains("1-"+i) && lp2.contains("2-"+i)
+		    						&& lp2.contains("3-"+i)) {
+		    					msg = "I Won..!!";
+		    				}
+	    				}
+	    			}
+	    			if (msg == null) {
+	    				if (lp2.contains("1-1") && lp2.contains("2-2")
+	    						&& lp2.contains("3-3")) {
+	    					msg = "I Won..!!";
+	    				}
+	    				if (lp2.contains("1-3") && lp2.contains("2-2")
+	    						&& lp2.contains("3-1")) {
+	    					msg = "I Won..!!";
+	    				}
+	    			}
+	    			if (msg == null) {
+	    				int count = 0;
+	    				for (int i = 1; i <= 3; i++) {
+	    					for (int j = 1; j <= 3; j++) {
+	    						String z = i + "-" + j;
+	    						if (lp1.contains(z) || lp2.contains(z)) {
+	    							count++;
+	    						}
+	    					}
+	    				}
+	    				if (count == 9) {
+	    					msg = "Game Tied..!!";
+	    				}
+	    			}
+	    		}
+	    		// -------------------
+	    		if (msg != null) {
+	    			if (msg.equals("You Won..!!")) {
+	    				lp2.remove(lp2.size() - 1);
+	    			}
+	    		}
+	    	
+	    		if(msg != null)
+	    		{
+		    		if(msg.equals("You Won..!!"))
+		    		{
+		    			Game ga = new Game();
+		    			Player p = playerDao.getPlayer(uname);
+		    			if(session.getAttribute("savetime") == null)
+		    			{
+			    			ga = gameDao.getGamewithstime(p,starttimeforAI);
+		    			
+		    			
+			    			 DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+				    		   //get current date time with Date()
+				    		   Date sdate = new Date();
+					    		try {
+									ga.setEndtime(dateFormat.parse(dateFormat.format(sdate)));
+								} catch (ParseException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+				    		ga.setWin_player(p);
+				    		ga.setTie(false);
+				    		ga.setSave(false);
+				    		gameDao.SaveGame(ga);
+		    			}
+			    		else
+		    			{
+		    				//ga = gameDao.getGameBySaveTime((Date)session.getAttribute("savetime"), p);
+			    			ga = gameDao.getGamebyId((Integer)session.getAttribute("savetime"));
+			    			ga.setSavetime(null);
+		    				 DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+				    		   //get current date time with Date()
+				    		   Date sdate = new Date();
+					    		try {
+									ga.setEndtime(dateFormat.parse(dateFormat.format(sdate)));
+								} catch (ParseException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+				    		ga.setWin_player(p);
+				    		ga.setTie(false);
+				    		ga.setSave(false);
+				    		gameDao.SaveGame(ga);
+				    		
+				    		//2
+				    		List<Game> gsavelist = new ArrayList<Game>();
+			    			gsavelist = gameDao.getSavedGames(p);
+			    			playerDao.addplayersavedgame(gsavelist,p.getPlayer_id());
+		    			
+			    			//3
+			    			List<SavedPosition> positions = savedpositionDao.getPosition(ga.getGame_id());
+			    			for(int i=0;i< positions.size();i++)
+			    			{
+			    				savedpositionDao.deleteRecord(positions.get(i).getSavedgameposition_id());
+			    			}
+		    			}
+				    		
+			    			
+		    		}
+		    		if(msg.equals("I Won..!!"))
+		    		{
+		    			Game ga = new Game();
+		    			Player p = playerDao.getPlayer(uname);
+		    			if(session.getAttribute("savetime") == null)
+		    			{
+			    		
+			    			ga = gameDao.getGamewithstime(p,starttimeforAI);
+			    			
+			    			 DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+				    		   //get current date time with Date()
+				    		   Date sdate = new Date();
+					    		try {
+									ga.setEndtime(dateFormat.parse(dateFormat.format(sdate)));
+								} catch (ParseException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+				    		ga.setLoss_player(p);
+				    		ga.setTie(false);
+				    		ga.setSave(false);
+				    		gameDao.SaveGame(ga);
+		    			}
+		    			else
+		    			{
+		    			
+			    			
+			    			//ga =gameDao.getGameBySaveTime((Date)session.getAttribute("savetime"), p);
+		    				ga = gameDao.getGamebyId((Integer)session.getAttribute("savetime"));
+		    				ga.setSavetime(null);
+			    			 DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+				    		   //get current date time with Date()
+				    		   Date sdate = new Date();
+					    		try {
+									ga.setEndtime(dateFormat.parse(dateFormat.format(sdate)));
+								} catch (ParseException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+				    		ga.setLoss_player(p);
+				    		ga.setTie(false);
+				    		ga.setSave(false);
+				    		gameDao.SaveGame(ga);
+		    				//2
+				    		List<Game> gsavelist = new ArrayList<Game>();
+			    			gsavelist = gameDao.getSavedGames(p);
+			    			playerDao.addplayersavedgame(gsavelist,p.getPlayer_id());
+		    			
+			    			//3
+			    			List<SavedPosition> positions = savedpositionDao.getPosition(ga.getGame_id());
+			    			for(int i=0;i< positions.size();i++)
+			    			{
+			    				savedpositionDao.deleteRecord(positions.get(i).getSavedgameposition_id());
+			    			}
+		    			}
+			    		
+		    		}
+		    		if(msg.equals("Game Tied..!!"))
+		    		{
+		    			Game ga = new Game();
+		    			Player p = playerDao.getPlayer(uname);
+		    			if(session.getAttribute("savetime") == null)
+		    			{
+			    			
+			    			ga = gameDao.getGamewithstime(p,starttimeforAI);
+			    			
+			    			 DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+				    		   //get current date time with Date()
+				    		   Date sdate = new Date();
+					    		try {
+									ga.setEndtime(dateFormat.parse(dateFormat.format(sdate)));
+								} catch (ParseException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+				    		ga.setTie(true);
+				    		ga.setSave(false);
+				    		gameDao.SaveGame(ga);
+		    			}
+		    			else
+		    			{
+		    				
+			    			
+			    			//ga =gameDao.getGameBySaveTime((Date)session.getAttribute("savetime"), p);
+		    				ga = gameDao.getGamebyId((Integer)session.getAttribute("savetime"));
+		    				ga.setSavetime(null);
+			    			 DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+				    		   //get current date time with Date()
+				    		   Date sdate = new Date();
+					    		try {
+									ga.setEndtime(dateFormat.parse(dateFormat.format(sdate)));
+								} catch (ParseException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+				    		ga.setTie(true);
+				    		ga.setSave(false);
+				    		gameDao.SaveGame(ga);
+				    		
+				    		//2
+				    		List<Game> gsavelist = new ArrayList<Game>();
+			    			gsavelist = gameDao.getSavedGames(p);
+			    			playerDao.addplayersavedgame(gsavelist,p.getPlayer_id());
+		    			
+			    			//3
+			    			List<SavedPosition> positions = savedpositionDao.getPosition(ga.getGame_id());
+			    			for(int i=0;i< positions.size();i++)
+			    			{
+			    				savedpositionDao.deleteRecord(positions.get(i).getSavedgameposition_id());
+			    			}
+		    			}
+		    		}
+	    		}
+	    		
+	    		// ----------------
+	    		session.setAttribute("list2", lp2);
+	    		session.setAttribute("list1", lp1);
+	    		}
+	    		models.put("message", msg);
+	    		models.put("lp1", session.getAttribute("list1"));
+	    		models.put("lp2", session.getAttribute("list2"));
+	    		//
+	    		return "player/PlayWithAI";
+	    	}
+	    }
+	    
+	    @SuppressWarnings("deprecation")
+		@RequestMapping(value= "/player/GameHistory.html", method = RequestMethod.GET)
+	    public String GameHistoryDisplay(ModelMap models,HttpSession session)
+	    {
+	    	if(session.getAttribute("username")==null)
+	    	{
+	    		return "redirect:Login.html?m=NewGame&type=FirstTime";
+	    	}
+	    	else
+	    	{
+	    	String un = (String)session.getAttribute("username");
+	    	Player p = playerDao.getPlayer(un);
+		    //1
+	    	List<Game> allcompletedgames = gameDao.getAllCompletedGames(p);
+	    	//2
+	    	List<Game> oneplayercompletedgames = gameDao.get1PlayerCompletedgames(p);
+	    	//3
+	    	List<Game> twoplayercompletedgames = gameDao.get2PlayerCompletedgames(p);
+	    	//4
+	    	List<Game> wingamesagainst_ai = new ArrayList<Game>();
+	    	for(int i=0;i<oneplayercompletedgames.size();i++)
+	    	{
+	    		if(oneplayercompletedgames.get(i).getWin_player() == p)
+	    		{
+	    			wingamesagainst_ai.add(oneplayercompletedgames.get(i));
+	    		}
+	    	}
+	    	 DecimalFormat df2 = new DecimalFormat("###.##");
+	    	double rateagainst_ai=0;
+	    	if(oneplayercompletedgames.size()!=0)
+	    	{
+	    		
+	    		 rateagainst_ai = (double)(wingamesagainst_ai.size()*100)/(double)oneplayercompletedgames.size();
+	    		 
+	    	}
+	    	//5
+	    	List<Game> wingamesagainst_hu = new ArrayList<Game>();
+	    	for(int i=0;i<twoplayercompletedgames.size();i++)
+	    	{
+	    		if(twoplayercompletedgames.get(i).getWin_player() == p)
+	    		{
+	    			wingamesagainst_hu.add(twoplayercompletedgames.get(i));
+	    		}
+	    	}
+	    	double rateagainst_hu=0 ;
+	    	if(twoplayercompletedgames.size()!=0)
+	    	{
+	    		 rateagainst_hu = (double)(wingamesagainst_hu.size()*100)/(double)twoplayercompletedgames.size();
+	    		 
+	    	}
+	    	//6
+	    	List<Game> all = gameDao.getAllCompletedGames(p);
+	    	List<Game> thismonth = new ArrayList<Game>();
+	    	HashMap<Integer,String> gamelength = new HashMap<Integer,String>();
+	    	Calendar c = Calendar.getInstance();
+	    	int year = c.get(Calendar.YEAR);
+	    	int month = c.get(Calendar.MONTH);
+	    	for(int j=0;j<all.size();j++)
+	    	{
+	    		Calendar ds = Calendar.getInstance();
+	    		Calendar de = Calendar.getInstance();
+	    		ds.setTime(all.get(j).getStarttime());
+	    		de.setTime(all.get(j).getEndtime());
+	    		if(de.get(Calendar.MONTH) == month && de.get(Calendar.YEAR) == year)
+	    		{
+	    			thismonth.add(all.get(j));
+	    		}
+	    		long mss = ds.getTimeInMillis();
+	    		long mse = de.getTimeInMillis();
+	    		long diff = mse-mss;
+	    		//long diffMinutes = diff / 1000;
+	    		///
+	    		long dd = diff / (24 * 60 * 60 * 1000);
+	    		diff = diff - (dd*24*60*60*1000); 
+	    		long dh = diff / (60 * 60 * 1000);
+	    	    diff = diff - (dh * 60 * 60 * 1000 );
+	    		long dm = diff / (60 * 1000);
+	    		diff = diff - (dm * 60 * 1000);
+	    		long dsec = diff / 1000;
+	            String gl = dd+"days "+dh+"hours "+dm+"minutes "+dsec+"seconds ";
+	    		////
+	    		gamelength.put(all.get(j).getGame_id(), gl);
+	    	}
+	    	
+	    	Collections.sort(thismonth, new Comparator<Game>() {
+	    		  public int compare(Game o1, Game o2) {
+	    		      return o1.getEndtime().compareTo(o2.getEndtime());
+	    		  }
+	    		});
+	    	
+	    	models.put("uname", un);
+	    	models.put("allcompletedgames", allcompletedgames.size());
+	    	models.put("oneplayercompletedgames", oneplayercompletedgames.size());
+	    	models.put("twoplayercompletedgames", twoplayercompletedgames.size());
+	    	models.put("rateagainst_ai", df2.format(rateagainst_ai));
+	    	models.put("rateagainst_hu", df2.format(rateagainst_hu));
+	    	models.put("thismonth", thismonth);
+	    	models.put("gamelength", gamelength);
+	        return "player/GameHistory";
+	    	}
+	    }
+	    
+	    
+	    @RequestMapping(value= "/player/ResumeGame.html")
+	    public String ResumeGameDisplay(@RequestParam Integer date,ModelMap models,HttpSession session)
+	    {
+	    	if(session.getAttribute("username")==null)
+	    	{
+	    		return "redirect:Login.html?m=NewGame&type=FirstTime";
+	    	}
+	    	else
+	    	{
+	    //date => gameid parameter
+	    	if(date == 0)
+	    	{
+		    	String user = (String) session.getAttribute("username");
+			    models.put( "uname", session.getAttribute("username"));
+			    Player p = playerDao.getPlayer(user);
+			    List<Game> ga =  gameDao.getSavedGames(p);
+			    models.put("ga", ga);
+		        return "player/ResumeGame";
+	   		}
+	    	else
+	    	{
+	    		Game g = new Game();
+		    	String user = (String) session.getAttribute("username");
+		    	Player p = playerDao.getPlayer(user);
+		         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+				/*try {
+					Date d = null;
+					d = dateFormat.parse(date);
+					g = gameDao.getGameBySaveTime(d, p);
+				} catch (ParseException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}*/
+				g = gameDao.getGamebyId(date);
+		    	List<SavedPosition> sp = savedpositionDao.getPosition(g.getGame_id());
+		    	List<String> p1 = new ArrayList<String>();
+		    	List<String> ai = new ArrayList<String>();
+		    	for(int i=0;i<sp.size();i++)
+		    	{
+		    		if(sp.get(i).isIsAiPlayerPosition() == false)
+		    		{
+		    			p1.add(sp.get(i).getPosition());
+		    		}
+		    		else
+		    		{
+		    			ai.add(sp.get(i).getPosition());
+		    		}
+		    	}
+		    
+		    		// savetime = game id
+					session.setAttribute("savetime", date);
+				
+		    	checkentryAI=true;
+		    	
+		    	session.setAttribute("list1", p1);
+		    	session.setAttribute("list2", ai);
+		        return "redirect:PlayWithAI.html?r=0&c=0";
+	    	}
+	    	}	
+	    }
+	    
+	  
+	
+}
